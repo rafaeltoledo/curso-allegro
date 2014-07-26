@@ -1,0 +1,4 @@
+# depslib dependency file v1.0
+1406398970 source:/home/rafael/Projetos/FAI/Allegro/HelloWorld/main.c
+	<allegro5/allegro.h>
+
