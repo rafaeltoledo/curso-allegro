@@ -3,8 +3,10 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
 #include <allegro5/allegro_primitives.h>
+#include <time.h>
 
 const int FPS = 60;
+const int INTERVALO_CANOS = 240;
 
 struct cano {
     int x;
@@ -24,6 +26,38 @@ void desenha_cano(struct cano c)
         al_map_rgb(0, 0xFF, 0));
 }
 
+int gera_altura_cano() {
+    return rand() % 350 + 10;
+}
+
+struct cano atualizar_cano(struct cano c) {
+    c.x = c.x - 2;
+
+    if (c.x < -80) {
+        c.x = 640 + INTERVALO_CANOS;
+        c.y = gera_altura_cano();
+    }
+
+    return c;
+}
+
+bool verifica_colisao(int x, int y, struct cano c) {
+
+    int raio = 20;
+    int distancia_canos = 120;
+    int largura_cano = 80;
+
+    // 1.
+    if (x - raio > c.x + largura_cano) return false;
+    // 2.
+    if (x + raio < c.x) return false;
+    // 3.
+    if (y - raio > c.y &&
+        y + raio < c.y + distancia_canos) return false;
+
+    return true;
+}
+
 void mostra_jogo()
 {
     ALLEGRO_EVENT_QUEUE *fila_eventos =
@@ -33,26 +67,29 @@ void mostra_jogo()
     al_register_event_source(fila_eventos,
         al_get_mouse_event_source());
 
+    srand(time(NULL));
+
     int y = 240;
     float aceleracao = 0;
     double tempo_inicial, tempo_final;
     bool sair = false;
     int raio = 20;
+    bool game_over = false;
 
     struct cano canos[4];
 
     // inicialização dos canos
     canos[0].x = 750;
-    canos[0].y = 180;
+    canos[0].y = gera_altura_cano();
 
-    canos[1].x = 750 + (160 * 1);
-    canos[1].y = 180;
+    canos[1].x = 750 + (INTERVALO_CANOS * 1);
+    canos[1].y = gera_altura_cano();
 
-    canos[2].x = 750 + (160 * 2);
-    canos[2].y = 180;
+    canos[2].x = 750 + (INTERVALO_CANOS * 2);
+    canos[2].y = gera_altura_cano();
 
-    canos[3].x = 750 + (160 * 3);
-    canos[3].y = 180;
+    canos[3].x = 750 + (INTERVALO_CANOS * 3);
+    canos[3].y = gera_altura_cano();
 
     while (sair == false) {
         tempo_inicial = al_get_time();
@@ -94,7 +131,21 @@ void mostra_jogo()
             }
             else if (evento.type ==
                     ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
-                aceleracao = 5;
+                if (game_over == false) {
+                    aceleracao = 5;
+                }
+            }
+        }
+
+        if (game_over == false) {
+            for (i = 0; i < 4; i++) {
+                game_over = verifica_colisao(70, y, canos[i]);
+
+                if (game_over) break;
+            }
+
+            for (i = 0; i < 4; i++) {
+                canos[i] = atualizar_cano(canos[i]);
             }
         }
 
