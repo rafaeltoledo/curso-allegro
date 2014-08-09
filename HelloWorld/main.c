@@ -4,19 +4,82 @@
 #include <allegro5/allegro_acodec.h>
 #include <allegro5/allegro_primitives.h>
 
+const int FPS = 60;
+
+struct cano {
+    int x;
+    int y;
+};
+
+int atualizar_posicao(int aceleracao, int posicao) {
+    return posicao - aceleracao;
+}
+
+void desenha_cano(struct cano c)
+{
+    al_draw_filled_rectangle(c.x, 0, c.x + 80, c.y,
+        al_map_rgb(0, 0xFF, 0));
+
+    al_draw_filled_rectangle(c.x, c.y + 120, c.x + 80, 480,
+        al_map_rgb(0, 0xFF, 0));
+}
+
 void mostra_jogo()
 {
     ALLEGRO_EVENT_QUEUE *fila_eventos =
         al_create_event_queue();
     al_register_event_source(fila_eventos,
         al_get_keyboard_event_source());
+    al_register_event_source(fila_eventos,
+        al_get_mouse_event_source());
 
+    int y = 240;
+    float aceleracao = 0;
+    double tempo_inicial, tempo_final;
     bool sair = false;
+    int raio = 20;
+
+    struct cano canos[4];
+
+    // inicialização dos canos
+    canos[0].x = 750;
+    canos[0].y = 180;
+
+    canos[1].x = 750 + (160 * 1);
+    canos[1].y = 180;
+
+    canos[2].x = 750 + (160 * 2);
+    canos[2].y = 180;
+
+    canos[3].x = 750 + (160 * 3);
+    canos[3].y = 180;
+
     while (sair == false) {
+        tempo_inicial = al_get_time();
+
         al_clear_to_color(al_map_rgb(0, 0, 0));
-        al_draw_filled_circle(70, 240, 20,
+
+        int i = 0;
+        for (i = 0; i < 4; i++) {
+            desenha_cano(canos[i]);
+        }
+
+        al_draw_filled_circle(70, y, raio,
             al_map_rgb(0xFF, 0, 0));
         al_flip_display();
+
+        y = atualizar_posicao(aceleracao, y);
+        aceleracao -= 0.25;
+
+        if (y > 480 - raio) {
+            y = 480 - raio;
+            aceleracao = 0;
+        }
+
+        if (y < raio) {
+            y = raio;
+            aceleracao = 0;
+        }
 
         while (!al_is_event_queue_empty(fila_eventos)) {
             ALLEGRO_EVENT evento;
@@ -29,6 +92,15 @@ void mostra_jogo()
                     sair = true;
                 }
             }
+            else if (evento.type ==
+                    ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+                aceleracao = 5;
+            }
+        }
+
+        tempo_final = al_get_time() - tempo_inicial;
+        if (tempo_final < 1.0 / FPS) {
+            al_rest(1.0 / FPS - tempo_final);
         }
     }
 
@@ -118,6 +190,8 @@ int main()
     al_init_image_addon();
     // Inicializando o teclado
     al_install_keyboard();
+    // Inicializando o mouse
+    al_install_mouse();
     // Inicializar o áudio
     al_install_audio();
     // Inicializar a parte de codecs de áudio
