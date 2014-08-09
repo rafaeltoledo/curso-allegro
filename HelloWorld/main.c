@@ -3,6 +3,59 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
 
+void monta_menu(int opcao_selecionada)
+{
+    ALLEGRO_BITMAP *config =
+        al_load_bitmap("Recursos/config.png");
+    ALLEGRO_BITMAP *config_pressed =
+        al_load_bitmap("Recursos/config_pressed.png");
+    ALLEGRO_BITMAP *iniciar =
+        al_load_bitmap("Recursos/iniciar.png");
+    ALLEGRO_BITMAP *iniciar_pressed =
+        al_load_bitmap("Recursos/iniciar_pressed.png");
+    ALLEGRO_BITMAP *sair =
+        al_load_bitmap("Recursos/sair.png");
+    ALLEGRO_BITMAP *sair_pressed =
+        al_load_bitmap("Recursos/sair_pressed.png");
+
+    // Primeira opção do menu (iniciar)
+    if (opcao_selecionada == 1) {
+        al_draw_bitmap(iniciar_pressed, 320 -
+            al_get_bitmap_width(iniciar_pressed) / 2,
+            240 - 10 -
+            al_get_bitmap_height(iniciar_pressed) -
+            al_get_bitmap_height(config) / 2,
+            0);
+    } else {
+        al_draw_bitmap(iniciar, 320 -
+            al_get_bitmap_width(iniciar) / 2,
+            240 - 10 -
+            al_get_bitmap_height(iniciar) -
+            al_get_bitmap_height(config) / 2,
+            0);
+    }
+
+    // Segundo botão do menu (config)
+    if (opcao_selecionada == 2) {
+        al_draw_bitmap(config_pressed, 320 -
+            al_get_bitmap_width(config_pressed) / 2,
+            240 - al_get_bitmap_height(config_pressed) / 2,
+            0);
+    } else {
+        al_draw_bitmap(config, 320 -
+            al_get_bitmap_width(config) / 2,
+            240 - al_get_bitmap_height(config) / 2,
+            0);
+    }
+
+    al_destroy_bitmap(config);
+    al_destroy_bitmap(config_pressed);
+    al_destroy_bitmap(iniciar);
+    al_destroy_bitmap(iniciar_pressed);
+    al_destroy_bitmap(sair);
+    al_destroy_bitmap(sair_pressed);
+}
+
 int main()
 {
     // Declara a janela do aplicativo
@@ -61,9 +114,14 @@ int main()
 
     // Espera 5 segundos
     //al_rest(5.0);
+    int opcao_menu = 1;
     bool sair = false;
     while (sair == false)
     {
+        al_draw_bitmap(fundo, 0, 0, 0);
+        monta_menu(opcao_menu);
+        al_flip_display();
+
         while (!al_is_event_queue_empty(fila_eventos))
         {
             ALLEGRO_EVENT evento;
