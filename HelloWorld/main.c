@@ -2,6 +2,38 @@
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
+#include <allegro5/allegro_primitives.h>
+
+void mostra_jogo()
+{
+    ALLEGRO_EVENT_QUEUE *fila_eventos =
+        al_create_event_queue();
+    al_register_event_source(fila_eventos,
+        al_get_keyboard_event_source());
+
+    bool sair = false;
+    while (sair == false) {
+        al_clear_to_color(al_map_rgb(0, 0, 0));
+        al_draw_filled_circle(70, 240, 20,
+            al_map_rgb(0xFF, 0, 0));
+        al_flip_display();
+
+        while (!al_is_event_queue_empty(fila_eventos)) {
+            ALLEGRO_EVENT evento;
+            al_wait_for_event(fila_eventos, &evento);
+
+            if (evento.type == ALLEGRO_EVENT_KEY_DOWN) {
+                if (evento.keyboard.keycode ==
+                                    ALLEGRO_KEY_ESCAPE)
+                {
+                    sair = true;
+                }
+            }
+        }
+    }
+
+    al_destroy_event_queue(fila_eventos);
+}
 
 void monta_menu(int opcao_selecionada)
 {
@@ -48,6 +80,19 @@ void monta_menu(int opcao_selecionada)
             0);
     }
 
+    // Terceiro botão do menu (sair)
+    if (opcao_selecionada == 3) {
+        al_draw_bitmap(sair_pressed, 320 -
+            al_get_bitmap_width(sair_pressed) / 2,
+            240 + 10 + al_get_bitmap_height(config) / 2,
+            0);
+    } else {
+        al_draw_bitmap(sair, 320 -
+            al_get_bitmap_width(sair_pressed) / 2,
+            240 + 10 + al_get_bitmap_height(config) / 2,
+            0);
+    }
+
     al_destroy_bitmap(config);
     al_destroy_bitmap(config_pressed);
     al_destroy_bitmap(iniciar);
@@ -79,6 +124,8 @@ int main()
     al_init_acodec_addon();
     // Reservar samples
     al_reserve_samples(1);
+    // Inicializar o módulo de primitivas gráficas
+    al_init_primitives_addon();
 
     // Cria a fila de eventos
     fila_eventos = al_create_event_queue();
@@ -137,6 +184,38 @@ int main()
                                     ALLEGRO_KEY_ESCAPE)
                 {
                     sair = true;
+                }
+                else if (evento.keyboard.keycode ==
+                                    ALLEGRO_KEY_DOWN)
+                {
+                    opcao_menu++;
+                    if (opcao_menu > 3) {
+                        opcao_menu = 1;
+                    }
+                }
+                else if (evento.keyboard.keycode ==
+                                    ALLEGRO_KEY_UP)
+                {
+                    opcao_menu--;
+                    if (opcao_menu < 1) {
+                        opcao_menu = 3;
+                    }
+                }
+                else if (evento.keyboard.keycode ==
+                                    ALLEGRO_KEY_ENTER)
+                {
+                    if (opcao_menu == 3) {
+                        sair = true;
+                    }
+                    else if (opcao_menu == 1) {
+                        al_unregister_event_source(
+                            fila_eventos,
+                            al_get_keyboard_event_source());
+                        mostra_jogo();
+                        al_register_event_source(
+                            fila_eventos,
+                            al_get_keyboard_event_source());
+                    }
                 }
             }
         }
