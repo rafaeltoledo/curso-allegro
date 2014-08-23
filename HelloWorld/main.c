@@ -6,20 +6,73 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <time.h>
+#include <string.h>
 
 const int FPS = 60;
 const int INTERVALO_CANOS = 240;
 
 void mostra_texto() {
-    ALLEGRO_EVENT_QUEUE *fila_eventos 
-        = al_create_event_queue();
+    ALLEGRO_EVENT_QUEUE *fila_eventos =
+        al_create_event_queue();
+    ALLEGRO_FONT *fonte = 
+        al_load_font("Recursos/flappy_font.ttf", 48, 0);
+    ALLEGRO_BITMAP *fundo =
+        al_load_bitmap("Recursos/scroll.jpg");
+    ALLEGRO_BITMAP *sprites[3];
+    sprites[0] = al_load_bitmap("Recursos/frame01.png");
+    al_convert_mask_to_alpha(sprites[0], al_map_rgb(0xFF, 0, 0xFF));
+    sprites[1] = al_load_bitmap("Recursos/frame02.png");
+    al_convert_mask_to_alpha(sprites[1], al_map_rgb(0xFF, 0, 0xFF));
+    sprites[2] = al_load_bitmap("Recursos/frame03.png");
+    al_convert_mask_to_alpha(sprites[2], al_map_rgb(0xFF, 0, 0xFF));
 
     al_register_event_source(fila_eventos,
         al_get_keyboard_event_source());
 
-    bool sair = false;
+    int y1 = 0;
+    int y2 = al_get_bitmap_height(fundo);
+
+    int tempo_inicial, tempo_final;
+
+    char nome[20];
+    strcpy(nome, ""); // Inicializando a string
+    bool sair = false, andando = false;
+
+    int indice_bitmap = 0;
+    int sentido = 1, x = 100;
+    int atualiza_frame = 0;
     while (sair == false) {
-        al_clear_to_color(al_map_rgb(0, 0, 0));
+        tempo_inicial = al_get_time();
+
+        //al_clear_to_color(al_map_rgb(0, 0, 0));
+        al_draw_bitmap(fundo, 0, y1--, 0);
+        al_draw_bitmap(fundo, 0, y2--, 0);
+
+        if (andando) {
+            x += 2 * sentido;
+
+            if (x < 0) {
+                x = 0;
+            } else if (x > 640 - al_get_bitmap_width(sprites[indice_bitmap])) {
+                x = 640 - al_get_bitmap_width(sprites[indice_bitmap]);
+            }
+
+            atualiza_frame++;
+            if (atualiza_frame % 7 == 0) {
+                atualiza_frame = 0;
+                indice_bitmap++;
+                if (indice_bitmap == 3) indice_bitmap = 0;
+            }
+        }
+
+        if (sentido > 0) {
+            al_draw_bitmap(sprites[indice_bitmap], x, 150, 0);
+        } else {
+            al_draw_bitmap(sprites[indice_bitmap], x, 150, ALLEGRO_FLIP_HORIZONTAL);
+        }
+        
+        al_draw_textf(fonte, al_map_rgb(0xFF, 0xFF, 0xFF),
+            10, 10, ALLEGRO_ALIGN_LEFT, "Nome: %s", nome);
         al_flip_display();
 
         while (!al_is_event_queue_empty(fila_eventos)) {
@@ -31,10 +84,63 @@ void mostra_texto() {
                         ALLEGRO_KEY_ESCAPE) {
                     sair = true;
                 }
+                else if (evento.keyboard.keycode ==
+                        ALLEGRO_KEY_BACKSPACE) {
+                    if (strlen(nome) > 0) {
+                        nome[strlen(nome) - 1] = '\0';
+                    }
+                }
+                else if (evento.keyboard.keycode ==
+                        ALLEGRO_KEY_LEFT) {
+                    sentido = -1;
+                    andando = true;
+                }
+                else if (evento.keyboard.keycode ==
+                        ALLEGRO_KEY_RIGHT) {
+                    sentido = 1;
+                    andando = true;
+                }
             }
+            else if (evento.type == ALLEGRO_EVENT_KEY_UP) {
+                if (evento.keyboard.keycode == ALLEGRO_KEY_LEFT ||
+                    evento.keyboard.keycode == ALLEGRO_KEY_RIGHT) {
+                    andando = false;
+                    indice_bitmap = 0;
+                }
+            }
+            else if (evento.type == ALLEGRO_EVENT_KEY_CHAR) {
+                if (strlen(nome) < 19) {
+                    char temp[] = {evento.keyboard.unichar, '\0'};
+                    if ( evento.keyboard.unichar == ' ' ||
+                        (evento.keyboard.unichar >= '0' && evento.keyboard.unichar <= '9') ||
+                        (evento.keyboard.unichar >= 'a' && evento.keyboard.unichar <= 'z') ||
+                        (evento.keyboard.unichar >= 'A' && evento.keyboard.unichar <= 'Z')) {
+                        strcat(nome, temp); // Concatena temp em nome
+                    }
+                }
+            }
+        }
+
+        if (y1 <= -al_get_bitmap_height(fundo)) {
+            y1 = al_get_bitmap_height(fundo);
+        } 
+
+        if (y2 <= -al_get_bitmap_height(fundo)) {
+            y2 = al_get_bitmap_height(fundo);
+        }
+
+        tempo_final = al_get_time() - tempo_inicial;
+        if (tempo_final < 1.0 / FPS) {
+            al_rest(1.0 / FPS - tempo_final);
         }
     }
 
+    int i;
+    for (i = 0; i < 3; i++) {
+        al_destroy_bitmap(sprites[i]);
+    }
+    al_destroy_bitmap(fundo);
+    al_destroy_font(fonte);
     al_destroy_event_queue(fila_eventos);
 }
 
